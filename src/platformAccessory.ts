@@ -1,5 +1,4 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { Logger, PlatformConfig } from 'homebridge';
 import { MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
@@ -63,8 +62,7 @@ export class MasterThermPlatformAccessory {
 
 
     setInterval(async () => {
-      const response = await this.masterThermAPI.getData(accessory.context.device.id); //relogin every hour
-
+      await this.masterThermAPI.getData(accessory.context.device.id); //relogin every hour
     }, 1 * 60 * 1000); //one minute
 
     setInterval(() => {
