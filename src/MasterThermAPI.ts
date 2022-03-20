@@ -48,7 +48,9 @@ export class MasterThermAPI {
         Accept: 'application/json',
       },
     });
-    const result = (await response.json()) as LoginResponse;
+    const jsonResult = await response.json();
+    this.log.debug(jsonResult);
+    const result = jsonResult as LoginResponse;
 
     if (result.returncode !== 0) { //error
       this.log.error(result.message);
@@ -74,7 +76,37 @@ export class MasterThermAPI {
         Accept: 'application/json',
       },
     });
-    const result = (await response.json()) as DataResponse;
+    const jsonResult = await response.json();
+    this.log.debug(jsonResult);
+    const result = jsonResult as DataResponse;
+    if (result.error.errorId !== 0) {
+      this.log.error(result.error.errorMessage);
+      return result;
+    } else {
+      return result;
+    }
+  }
+
+  async setData(moduleId: string, parameter: string, value: number): Promise<DataResponse> {
+    this.messageId++;
+
+    const body = 'messageId=' + this.messageId + '&moduleId=' + moduleId
+        + '&deviceId=1&configFile=varfile_mt1_config&errorResponse=true&variableId='
+        + parameter + '&variableValue='+ value;
+    this.log.debug(body);
+    this.log.debug(this.cookie);
+    const response = await fetch(this.PARAMS_BASE_URL + '/ActiveVizualizationServlet', {
+      method: 'POST',
+      body: body,
+      headers: {
+        'Cookie': this.cookie,
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+      },
+    });
+    const jsonResult = await response.json();
+    this.log.debug(jsonResult);
+    const result = jsonResult as DataResponse;
     if (result.error.errorId !== 0) {
       this.log.error(result.error.errorMessage);
       return result;
@@ -85,5 +117,13 @@ export class MasterThermAPI {
 
   getAnalogValue(dataResponse: DataResponse, id: number):number {
     return dataResponse.data['varfile_mt1_config1']['001']['A_'+id] as number;
+  }
+
+  getBoolValue(dataResponse: DataResponse, id: number):boolean {
+    return dataResponse.data['varfile_mt1_config1']['001']['D_'+id] as boolean;
+  }
+
+  getIntValue(dataResponse: DataResponse, id: number):number {
+    return dataResponse.data['varfile_mt1_config1']['001']['I_'+id] as number;
   }
 }
