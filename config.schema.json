@@ -6,13 +6,19 @@
     "type": "object",
     "properties": {
       "name": {
-        "title": "username",
+        "title": "Enter heat pump name",
+        "type": "string",
+        "required": true,
+        "default": ""
+      },
+      "username": {
+        "title": "Enter user name",
         "type": "string",
         "required": true,
         "default": "enter your email"
       },
       "password": {
-        "title": "password",
+        "title": "Enter password",
         "type": "string",
         "required": true,
         "default": "enter your password"
