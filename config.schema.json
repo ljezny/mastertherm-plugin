@@ -1,15 +1,21 @@
 {
-  "pluginAlias": "ExampleHomebridgePlugin",
+  "pluginAlias": "MasterThermPlugin",
   "pluginType": "platform",
   "singular": true,
   "schema": {
     "type": "object",
     "properties": {
       "name": {
-        "title": "Name",
+        "title": "username",
         "type": "string",
         "required": true,
-        "default": "Example Dynamic Platform"
+        "default": "enter your email"
+      },
+      "password": {
+        "title": "password",
+        "type": "string",
+        "required": true,
+        "default": "enter your password"
       }
     }
   }

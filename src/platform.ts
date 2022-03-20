@@ -2,6 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { ExamplePlatformAccessory } from './platformAccessory';
+import { MasterThermAPI } from './MasterThermAPI';
 
 /**
  * HomebridgePlatform
@@ -49,8 +50,8 @@ export class ExampleHomebridgePlatform implements DynamicPlatformPlugin {
    * Accessories must only be registered once, previously created accessories
    * must not be registered again to prevent "duplicate UUID" errors.
    */
-  discoverDevices() {
-
+  async discoverDevices() {
+    await new MasterThermAPI(this.log, this.config).login();
     // EXAMPLE ONLY
     // A real plugin you would discover accessories from the local network, cloud services
     // or a user-defined array in the platform config.
