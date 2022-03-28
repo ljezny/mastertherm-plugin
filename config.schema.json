@@ -5,23 +5,17 @@
   "schema": {
     "type": "object",
     "properties": {
-      "name": {
-        "title": "Enter heat pump name",
+      "username": {
+        "title": "Enter your user name",
         "type": "string",
         "required": true,
         "default": ""
       },
-      "username": {
-        "title": "Enter user name",
-        "type": "string",
-        "required": true,
-        "default": "enter your email"
-      },
       "password": {
-        "title": "Enter password",
+        "title": "Enter your password",
         "type": "string",
         "required": true,
-        "default": "enter your password"
+        "default": ""
       }
     }
   }

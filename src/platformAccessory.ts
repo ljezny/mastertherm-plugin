@@ -62,12 +62,17 @@ export class MasterThermPlatformAccessory {
 
 
     setInterval(async () => {
-      await this.masterThermAPI.getData(accessory.context.device.id); //relogin every hour
-    }, 1 * 60 * 1000); //one minute
+      await this.masterThermAPI.login();
 
-    setInterval(() => {
-      this.masterThermAPI.login(); //relogin every hour
-    }, 60 * 60 * 1000); //hour
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
+        , await this.handleCurrentHeatingCoolingStateGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
+        , await this.handleTargetHeatingCoolingStateGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
+        , await this.handleTargetTemperatureGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
+        , await this.handleCurrentTemperatureGet());
+    }, 1 * 60 * 1000); //one minute
   }
 
   /**
@@ -76,19 +81,46 @@ export class MasterThermPlatformAccessory {
   async handleCurrentHeatingCoolingStateGet(): Promise<CharacteristicValue> {
     this.platform.log.debug('Triggered GET CurrentHeatingCoolingState');
 
-    return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
-    /*
     const response = await this.masterThermAPI.getData(this.accessory.context.device.id);
-    return this.masterThermAPI.getIntValue(response, 51) === 1;*/
+
+    if(!this.masterThermAPI.getBoolValue(response, 3)) {
+      return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+    }
+
+    const season = this.masterThermAPI.getBoolValue(response, 24);
+    if(season){
+      return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
+    } else {
+      return this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
+    }
   }
 
 
   /**
  * Handle requests to get the current value of the "Target Heating Cooling State" characteristic
  */
-  handleTargetHeatingCoolingStateGet() {
+  async handleTargetHeatingCoolingStateGet(): Promise<CharacteristicValue> {
     this.platform.log.debug('Triggered GET TargetHeatingCoolingState');
 
+    const response = await this.masterThermAPI.getData(this.accessory.context.device.id);
+
+    if(!this.masterThermAPI.getBoolValue(response, 3)) {
+      this.platform.log.debug('Triggered GET TargetHeatingCoolingState OFF');
+      return this.platform.Characteristic.TargetHeatingCoolingState.OFF;
+    }
+
+    switch(this.masterThermAPI.getIntValue(response, 50)) {
+      case 0:
+        this.platform.log.debug('Triggered GET TargetHeatingCoolingState AUTO');
+        return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
+      case 1:
+        this.platform.log.debug('Triggered GET TargetHeatingCoolingState HEAT');
+        return this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
+      case 2:
+        this.platform.log.debug('Triggered GET TargetHeatingCoolingState COOL');
+        return this.platform.Characteristic.TargetHeatingCoolingState.COOL;
+    }
+    this.platform.log.debug('Triggered GET TargetHeatingCoolingState AUTO (default)');
     return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
   }
 
@@ -97,6 +129,24 @@ export class MasterThermPlatformAccessory {
  */
   async handleTargetHeatingCoolingStateSet(value: CharacteristicValue) {
     this.platform.log.debug('Triggered SET TargetHeatingCoolingState:' + value.toString());
+
+    switch(value) {
+      case this.platform.Characteristic.TargetHeatingCoolingState.OFF:
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 0);
+        break;
+      case this.platform.Characteristic.TargetHeatingCoolingState.AUTO:
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 1);
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'I_50', 0);
+        break;
+      case this.platform.Characteristic.TargetHeatingCoolingState.HEAT:
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 1);
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'I_50', 1);
+        break;
+      case this.platform.Characteristic.TargetHeatingCoolingState.COOL:
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 1);
+        await this.masterThermAPI.setData(this.accessory.context.device.id, 'I_50', 2);
+        break;
+    }
   }
 
   /**
@@ -125,7 +175,7 @@ export class MasterThermPlatformAccessory {
  */
   async handleTargetTemperatureSet(value: CharacteristicValue) {
     this.platform.log.debug('Triggered SET TargetTemperature:' + value.toString());
-    await this.masterThermAPI.login();
+
     await this.masterThermAPI.setData(this.accessory.context.device.id, 'A_191', value as number);
   }
 
@@ -147,31 +197,5 @@ export class MasterThermPlatformAccessory {
   handleTemperatureDisplayUnitsSet(value: CharacteristicValue) {
     this.platform.log.debug('Triggered SET TemperatureDisplayUnits:' + value.toString());
   }
-  /**
-   * Handle the "GET" requests from HomeKit
-   * These are sent when HomeKit wants to know the current state of the accessory, for example, checking if a Light bulb is on.
-   *
-   * GET requests should return as fast as possbile. A long delay here will result in
-   * HomeKit being unresponsive and a bad user experience in general.
-   *
-   * If your device takes time to respond you should update the status of your device
-   * asynchronously instead using the `updateCharacteristic` method instead.
-
-   * @example
-   * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
-   */
-  /*
-  async getOn(): Promise<CharacteristicValue> {
-    // implement your own code to check if the device is on
-    const isOn = this.exampleStates.On;
-
-    this.platform.log.debug('Get Characteristic On ->', isOn);
-
-    // if you need to return an error to show the device as "Not Responding" in the Home app:
-    // throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-
-    return isOn;
-  }
-*/
 
 }

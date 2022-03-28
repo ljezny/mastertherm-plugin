@@ -1,7 +1,7 @@
 {
   "displayName": "MasterTherm heat pump plugin Name",
   "name": "homebridge-mastertherm",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "You can connect MasterTherm heatpump to homekit as a thermostat.",
   "license": "Apache-2.0",
   "repository": {

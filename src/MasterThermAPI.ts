@@ -117,14 +117,14 @@ export class MasterThermAPI {
   }
 
   getAnalogValue(dataResponse: DataResponse, id: number):number {
-    return dataResponse.data['varfile_mt1_config1']['001']['A_'+id] as number;
+    return Number(dataResponse.data['varfile_mt1_config1']['001']['A_'+id]);
   }
 
   getBoolValue(dataResponse: DataResponse, id: number):boolean {
-    return dataResponse.data['varfile_mt1_config1']['001']['D_'+id] as boolean;
+    return dataResponse.data['varfile_mt1_config1']['001']['D_'+id] === '1';
   }
 
   getIntValue(dataResponse: DataResponse, id: number):number {
-    return dataResponse.data['varfile_mt1_config1']['001']['I_'+id] as number;
+    return Number(dataResponse.data['varfile_mt1_config1']['001']['I_'+id]);
   }
 }
