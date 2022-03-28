@@ -1,5 +1,5 @@
 
-# MasterTherm Heat pump Homebridge Platform Plugin
+# MasterTherm HomeKit - Plugin for Homebridge
 
 You can connect MasterTherm heatpump to homekit as a thermostat.
 
