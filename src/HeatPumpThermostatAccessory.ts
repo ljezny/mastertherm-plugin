@@ -8,7 +8,7 @@ import { MasterThermHomebridgePlatform } from './platform';
  * An instance of this class is created for each accessory your platform registers
  * Each accessory may expose multiple services of different service types.
  */
-export class MasterThermPlatformAccessory {
+export class HeatPumpThermostatAccessory {
   private service: Service;
   private masterThermAPI: MasterThermAPI;
   private cachedData?: DataResponse;

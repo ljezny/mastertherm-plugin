@@ -1,8 +1,10 @@
 import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from 'homebridge';
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
-import { MasterThermPlatformAccessory } from './platformAccessory';
+import { HeatPumpThermostatAccessory } from './HeatPumpThermostatAccessory';
 import { MasterThermAPI } from './masterthermAPI';
+import { TemperatureSensorAccessory } from './TemperatureSensorAccessory';
+import { HotWaterThermostatAccessory } from './HotWaterThermostatAccessory';
 
 /**
  * HomebridgePlatform
@@ -55,41 +57,68 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
     const loginResponse = await masterThermApi.login();
     if (loginResponse.returncode === 0) {
       for (const moduleInfo of loginResponse.modules) {
-        const uuid = this.api.hap.uuid.generate(moduleInfo.id.toString());
-        const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+        const dataResponse = await masterThermApi.getData(moduleInfo.id.toString());
+        {
+          const uuid = this.api.hap.uuid.generate(moduleInfo.id.toString() + 'HeatPump');
+          const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
 
-        if (existingAccessory) {
-          this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+          if (existingAccessory) {
+            this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+            new HeatPumpThermostatAccessory(this, existingAccessory);
+          } else {
+            this.log.info('Adding new accessory:', moduleInfo.module_name);
+            const accessory = new this.api.platformAccessory('Heating thermostat', uuid);
+            accessory.context.device = moduleInfo;
+            new HeatPumpThermostatAccessory(this, accessory);
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+          }
+        }
 
-          // if you need to update the accessory.context then you should run `api.updatePlatformAccessories`. eg.:
-          // existingAccessory.context.device = device;
-          // this.api.updatePlatformAccessories([existingAccessory]);
+        {
+          const uuid = this.api.hap.uuid.generate(moduleInfo.id.toString() + 'IndoorTemp');
+          const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+          if (existingAccessory) {
+            this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+            new TemperatureSensorAccessory(this, existingAccessory, 'Indoor', 211);
+          } else {
+            this.log.info('Adding new accessory:', moduleInfo.module_name);
+            const accessory = new this.api.platformAccessory('Indoor temperature', uuid);
+            accessory.context.device = moduleInfo;
+            new TemperatureSensorAccessory(this, accessory, 'Indoor', 211);
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+          }
+        }
 
-          // create the accessory handler for the restored accessory
-          // this is imported from `platformAccessory.ts`
-          new MasterThermPlatformAccessory(this, existingAccessory);
+        {
+          const uuid = this.api.hap.uuid.generate(moduleInfo.id.toString() + 'OutdoorTemp');
+          const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+          if (existingAccessory) {
+            this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+            new TemperatureSensorAccessory(this, existingAccessory, 'Outdoor', 3);
+          } else {
+            this.log.info('Adding new accessory:', moduleInfo.module_name);
+            const accessory = new this.api.platformAccessory('Outdoor temperature', uuid);
+            accessory.context.device = moduleInfo;
+            new TemperatureSensorAccessory(this, accessory, 'Outdoor', 3);
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+          }
+        }
 
-        // it is possible to remove platform accessories at any time using `api.unregisterPlatformAccessories`, eg.:
-        // remove platform accessories when no longer present
-        // this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [existingAccessory]);
-        // this.log.info('Removing existing accessory from cache:', existingAccessory.displayName);
-        } else {
-        // the accessory does not yet exist, so we need to create it
-          this.log.info('Adding new accessory:', moduleInfo.module_name);
-
-          // create a new accessory
-          const accessory = new this.api.platformAccessory(moduleInfo.module_name, uuid);
-
-          // store a copy of the device object in the `accessory.context`
-          // the `context` property can be used to store any data about the accessory you may need
-          accessory.context.device = moduleInfo;
-
-          // create the accessory handler for the newly create accessory
-          // this is imported from `platformAccessory.ts`
-          new MasterThermPlatformAccessory(this, accessory);
-
-          // link the accessory to your platform
-          this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+        {
+          const uuid = this.api.hap.uuid.generate(moduleInfo.id.toString() + 'HotWater');
+          const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
+          if (existingAccessory) {
+            this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
+            new HotWaterThermostatAccessory(this, existingAccessory,
+              masterThermApi.getAnalogValue(dataResponse, 296), masterThermApi.getAnalogValue(dataResponse, 297));
+          } else {
+            this.log.info('Adding new accessory:', moduleInfo.module_name);
+            const accessory = new this.api.platformAccessory('Hot water system', uuid);
+            accessory.context.device = moduleInfo;
+            new HotWaterThermostatAccessory(this, accessory,
+              masterThermApi.getAnalogValue(dataResponse, 296), masterThermApi.getAnalogValue(dataResponse, 297));
+            this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
+          }
         }
       }
     }
