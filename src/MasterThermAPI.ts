@@ -7,7 +7,7 @@ type DataErrorResponse = {
     errorMessage: string;
 };
 
-type DataResponse = {
+export type DataResponse = {
   timestamp: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any;

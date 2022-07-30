@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { MasterThermAPI } from './masterthermAPI';
+import { DataResponse, MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
 
@@ -11,7 +11,7 @@ import { MasterThermHomebridgePlatform } from './platform';
 export class MasterThermPlatformAccessory {
   private service: Service;
   private masterThermAPI: MasterThermAPI;
-
+  private cachedData?: DataResponse;
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
@@ -63,6 +63,7 @@ export class MasterThermPlatformAccessory {
 
     setInterval(async () => {
       await this.masterThermAPI.login();
+      this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
 
       this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
         , await this.handleCurrentHeatingCoolingStateGet());
@@ -81,7 +82,7 @@ export class MasterThermPlatformAccessory {
   async handleCurrentHeatingCoolingStateGet(): Promise<CharacteristicValue> {
     this.platform.log.debug('Triggered GET CurrentHeatingCoolingState');
 
-    const response = await this.masterThermAPI.getData(this.accessory.context.device.id);
+    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
 
     if(!this.masterThermAPI.getBoolValue(response, 3)) {
       return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
@@ -102,7 +103,7 @@ export class MasterThermPlatformAccessory {
   async handleTargetHeatingCoolingStateGet(): Promise<CharacteristicValue> {
     this.platform.log.debug('Triggered GET TargetHeatingCoolingState');
 
-    const response = await this.masterThermAPI.getData(this.accessory.context.device.id);
+    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
 
     if(!this.masterThermAPI.getBoolValue(response, 3)) {
       this.platform.log.debug('Triggered GET TargetHeatingCoolingState OFF');
@@ -155,7 +156,7 @@ export class MasterThermPlatformAccessory {
   async handleCurrentTemperatureGet(): Promise<CharacteristicValue> {
     this.platform.log.debug('Triggered GET CurrentTemperature');
 
-    const response = await this.masterThermAPI.getData(this.accessory.context.device.id);
+    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
     return this.masterThermAPI.getAnalogValue(response, 211);
   }
 
@@ -166,7 +167,7 @@ export class MasterThermPlatformAccessory {
   async handleTargetTemperatureGet(): Promise<CharacteristicValue> {
     this.platform.log.debug('Triggered GET TargetTemperature');
 
-    const response = await this.masterThermAPI.getData(this.accessory.context.device.id);
+    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
     return this.masterThermAPI.getAnalogValue(response, 191);
   }
 
