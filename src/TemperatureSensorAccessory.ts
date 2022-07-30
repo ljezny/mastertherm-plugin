@@ -16,7 +16,7 @@ export class TemperatureSensorAccessory {
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
     private readonly name: string,
-    private readonly valueId: number
+    private readonly valueId: number,
   ) {
     this.masterThermAPI = new MasterThermAPI(platform.log, platform.config);
 
