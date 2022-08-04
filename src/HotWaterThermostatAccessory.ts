@@ -15,8 +15,8 @@ export class HotWaterThermostatAccessory {
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
-    private readonly minValue: number,
-    private readonly maxValue: number,
+    minValue: number,
+    maxValue: number,
   ) {
     this.masterThermAPI = new MasterThermAPI(platform.log, platform.config);
 
@@ -27,7 +27,7 @@ export class HotWaterThermostatAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.device.id);
 
     this.service = this.accessory.getService(this.platform.Service.Thermostat)
-    || this.accessory.addService(this.platform.Service.Thermostat);
+      || this.accessory.addService(this.platform.Service.Thermostat);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -74,17 +74,21 @@ export class HotWaterThermostatAccessory {
 
 
     setInterval(async () => {
-      await this.masterThermAPI.login();
-      this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
+      try {
+        await this.masterThermAPI.login();
+        this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
 
-      this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
-        , await this.handleCurrentHeatingCoolingStateGet());
-      this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
-        , await this.handleTargetHeatingCoolingStateGet());
-      this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
-        , await this.handleTargetTemperatureGet());
-      this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
-        , await this.handleCurrentTemperatureGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
+          , await this.handleCurrentHeatingCoolingStateGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
+          , await this.handleTargetHeatingCoolingStateGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
+          , await this.handleTargetTemperatureGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
+          , await this.handleCurrentTemperatureGet());
+      } catch {
+        platform.log.error('Interval update failure');
+      }
     }, 1 * 60 * 1000); //one minute
   }
 
@@ -92,14 +96,18 @@ export class HotWaterThermostatAccessory {
    * Handle requests to get the current value of the "Current Heating Cooling State" characteristic
    */
   async handleCurrentHeatingCoolingStateGet(): Promise<CharacteristicValue> {
-    this.platform.log.debug('Triggered GET CurrentHeatingCoolingState');
+    try {
+      this.platform.log.debug('Triggered GET CurrentHeatingCoolingState');
 
-    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
 
-    if(!this.masterThermAPI.getBoolValue(response, 3)) {
-      return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+      if (!this.masterThermAPI.getBoolValue(response, 3)) {
+        return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
+      }
+      return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
-    return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
   }
 
 
@@ -107,8 +115,12 @@ export class HotWaterThermostatAccessory {
  * Handle requests to get the current value of the "Target Heating Cooling State" characteristic
  */
   async handleTargetHeatingCoolingStateGet(): Promise<CharacteristicValue> {
-    this.platform.log.debug('Triggered GET TargetHeatingCoolingState');
-    return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
+    try {
+      this.platform.log.debug('Triggered GET TargetHeatingCoolingState');
+      return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
   /**
@@ -122,10 +134,14 @@ export class HotWaterThermostatAccessory {
  * Handle requests to get the current value of the "Current Temperature" characteristic
  */
   async handleCurrentTemperatureGet(): Promise<CharacteristicValue> {
-    this.platform.log.debug('Triggered GET CurrentTemperature');
+    try {
+      this.platform.log.debug('Triggered GET CurrentTemperature');
 
-    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
-    return this.masterThermAPI.getAnalogValue(response, 126);
+      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      return this.masterThermAPI.getAnalogValue(response, 126);
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
 
@@ -133,19 +149,27 @@ export class HotWaterThermostatAccessory {
  * Handle requests to get the current value of the "Target Temperature" characteristic
  */
   async handleTargetTemperatureGet(): Promise<CharacteristicValue> {
-    this.platform.log.debug('Triggered GET TargetTemperature');
+    try {
+      this.platform.log.debug('Triggered GET TargetTemperature');
 
-    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
-    return this.masterThermAPI.getAnalogValue(response, 129);
+      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      return this.masterThermAPI.getAnalogValue(response, 129);
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
   /**
  * Handle requests to set the "Target Temperature" characteristic
  */
   async handleTargetTemperatureSet(value: CharacteristicValue) {
-    this.platform.log.debug('Triggered SET TargetTemperature:' + value.toString());
+    try {
+      this.platform.log.debug('Triggered SET TargetTemperature:' + value.toString());
 
-    await this.masterThermAPI.setData(this.accessory.context.device.id, 'A_129', value as number);
+      await this.masterThermAPI.setData(this.accessory.context.device.id, 'A_129', value as number);
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
 
   /**

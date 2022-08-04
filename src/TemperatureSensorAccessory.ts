@@ -27,7 +27,7 @@ export class TemperatureSensorAccessory {
       .setCharacteristic(this.platform.Characteristic.SerialNumber, this.accessory.context.device.id);
 
     this.service = this.accessory.getService(this.platform.Service.TemperatureSensor)
-    || this.accessory.addService(this.platform.Service.TemperatureSensor);
+      || this.accessory.addService(this.platform.Service.TemperatureSensor);
 
     // set the service name, this is what is displayed as the default name on the Home app
     // in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
@@ -49,11 +49,15 @@ export class TemperatureSensorAccessory {
 
 
     setInterval(async () => {
-      await this.masterThermAPI.login();
-      this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
+      try {
+        await this.masterThermAPI.login();
+        this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
 
-      this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
-        , await this.handleCurrentTemperatureGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
+          , await this.handleCurrentTemperatureGet());
+      } catch {
+        platform.log.error('Interval update failure');
+      }
     }, 1 * 60 * 1000); //one minute
   }
 
@@ -61,10 +65,13 @@ export class TemperatureSensorAccessory {
  * Handle requests to get the current value of the "Current Temperature" characteristic
  */
   async handleCurrentTemperatureGet(): Promise<CharacteristicValue> {
-    this.platform.log.debug('Triggered GET CurrentTemperature');
+    try {
+      this.platform.log.debug('Triggered GET CurrentTemperature');
 
-    const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
-    return this.masterThermAPI.getAnalogValue(response, this.valueId);
+      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      return this.masterThermAPI.getAnalogValue(response, this.valueId);
+    } catch {
+      throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
+    }
   }
-
 }
