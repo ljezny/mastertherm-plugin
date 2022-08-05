@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue, VoidCallback } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
 import { DataResponse, MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
