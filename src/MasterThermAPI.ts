@@ -55,7 +55,7 @@ export class MasterThermAPI {
 
     if (result.returncode !== 0) { //error
       this.log.error(result.message);
-      return result;
+      throw Error(result.message);
     } else {
       this.cookie = response.headers.get(['set-cookie']);
       this.log.debug(result.message);
@@ -82,7 +82,7 @@ export class MasterThermAPI {
     const result = jsonResult as DataResponse;
     if (result.error.errorId !== 0) {
       this.log.error(result.error.errorMessage);
-      return result;
+      throw Error(result.error.errorMessage);
     } else {
       return result;
     }
@@ -110,7 +110,7 @@ export class MasterThermAPI {
     const result = jsonResult as DataResponse;
     if (result.error.errorId !== 0) {
       this.log.error(result.error.errorMessage);
-      return result;
+      throw Error(result.error.errorMessage);
     } else {
       return result;
     }
