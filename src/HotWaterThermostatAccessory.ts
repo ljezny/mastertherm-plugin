@@ -10,16 +10,14 @@ import { MasterThermHomebridgePlatform } from './platform';
  */
 export class HotWaterThermostatAccessory {
   private service: Service;
-  private masterThermAPI: MasterThermAPI;
   private cachedData?: DataResponse;
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
     minValue: number,
     maxValue: number,
+    private readonly masterThermAPI: MasterThermAPI,
   ) {
-    this.masterThermAPI = new MasterThermAPI(platform.log, platform.config);
-
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
       .setCharacteristic(this.platform.Characteristic.Manufacturer, 'MasterTherm')

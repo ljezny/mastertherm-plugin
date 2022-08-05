@@ -64,12 +64,12 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
 
           if (existingAccessory) {
             this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-            new HeatPumpThermostatAccessory(this, existingAccessory);
+            new HeatPumpThermostatAccessory(this, existingAccessory, masterThermApi);
           } else {
             this.log.info('Adding new accessory:', moduleInfo.module_name);
             const accessory = new this.api.platformAccessory('Heating thermostat', uuid);
             accessory.context.device = moduleInfo;
-            new HeatPumpThermostatAccessory(this, accessory);
+            new HeatPumpThermostatAccessory(this, accessory, masterThermApi);
             this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
           }
         }
@@ -79,12 +79,12 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
           const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
           if (existingAccessory) {
             this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-            new TemperatureSensorAccessory(this, existingAccessory, 'Indoor', 211);
+            new TemperatureSensorAccessory(this, existingAccessory, 'Indoor', 211, masterThermApi);
           } else {
             this.log.info('Adding new accessory:', moduleInfo.module_name);
             const accessory = new this.api.platformAccessory('Indoor temperature', uuid);
             accessory.context.device = moduleInfo;
-            new TemperatureSensorAccessory(this, accessory, 'Indoor', 211);
+            new TemperatureSensorAccessory(this, accessory, 'Indoor', 211, masterThermApi);
             this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
           }
         }
@@ -94,12 +94,12 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
           const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);
           if (existingAccessory) {
             this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
-            new TemperatureSensorAccessory(this, existingAccessory, 'Outdoor', 3);
+            new TemperatureSensorAccessory(this, existingAccessory, 'Outdoor', 3, masterThermApi);
           } else {
             this.log.info('Adding new accessory:', moduleInfo.module_name);
             const accessory = new this.api.platformAccessory('Outdoor temperature', uuid);
             accessory.context.device = moduleInfo;
-            new TemperatureSensorAccessory(this, accessory, 'Outdoor', 3);
+            new TemperatureSensorAccessory(this, accessory, 'Outdoor', 3, masterThermApi);
             this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
           }
         }
@@ -110,13 +110,13 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
           if (existingAccessory) {
             this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName);
             new HotWaterThermostatAccessory(this, existingAccessory,
-              masterThermApi.getAnalogValue(dataResponse, 296), masterThermApi.getAnalogValue(dataResponse, 297));
+              masterThermApi.getAnalogValue(dataResponse, 296), masterThermApi.getAnalogValue(dataResponse, 297), masterThermApi);
           } else {
             this.log.info('Adding new accessory:', moduleInfo.module_name);
             const accessory = new this.api.platformAccessory('Hot water system', uuid);
             accessory.context.device = moduleInfo;
             new HotWaterThermostatAccessory(this, accessory,
-              masterThermApi.getAnalogValue(dataResponse, 296), masterThermApi.getAnalogValue(dataResponse, 297));
+              masterThermApi.getAnalogValue(dataResponse, 296), masterThermApi.getAnalogValue(dataResponse, 297), masterThermApi);
             this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory]);
           }
         }

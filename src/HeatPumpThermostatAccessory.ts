@@ -1,4 +1,4 @@
-import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
+import { Service, PlatformAccessory, CharacteristicValue, VoidCallback } from 'homebridge';
 import { DataResponse, MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
@@ -10,13 +10,12 @@ import { MasterThermHomebridgePlatform } from './platform';
  */
 export class HeatPumpThermostatAccessory {
   private service: Service;
-  private masterThermAPI: MasterThermAPI;
   private cachedData?: DataResponse;
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
+    private readonly masterThermAPI: MasterThermAPI,
   ) {
-    this.masterThermAPI = new MasterThermAPI(platform.log, platform.config);
 
     // set accessory information
     this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -77,7 +76,6 @@ export class HeatPumpThermostatAccessory {
       } catch {
         throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
       }
-
     }, 1 * 60 * 1000); //one minute
   }
 
