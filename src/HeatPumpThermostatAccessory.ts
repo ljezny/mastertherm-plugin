@@ -35,7 +35,12 @@ export class HeatPumpThermostatAccessory {
 
     this.service.getCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState)
       .onGet(this.handleTargetHeatingCoolingStateGet.bind(this))
-      .onSet(this.handleTargetHeatingCoolingStateSet.bind(this));
+      .onSet(this.handleTargetHeatingCoolingStateSet.bind(this))
+      .setProps({
+        minValue: 0,
+        maxValue: 1,
+        minStep: 1,
+      });
 
     this.service.getCharacteristic(this.platform.Characteristic.CurrentTemperature)
       .onGet(this.handleCurrentTemperatureGet.bind(this));
@@ -92,11 +97,11 @@ export class HeatPumpThermostatAccessory {
         return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
       }
 
-      const season = this.masterThermAPI.getBoolValue(response, 24);
-      if (season) {
-        return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
-      } else {
+      const currentFunction = this.masterThermAPI.getBoolValue(response, 4);
+      if (currentFunction) {
         return this.platform.Characteristic.CurrentHeatingCoolingState.COOL;
+      } else {
+        return this.platform.Characteristic.CurrentHeatingCoolingState.HEAT;
       }
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -116,21 +121,10 @@ export class HeatPumpThermostatAccessory {
       if (!this.masterThermAPI.getBoolValue(response, 3)) {
         this.platform.log.debug('Triggered GET TargetHeatingCoolingState OFF');
         return this.platform.Characteristic.TargetHeatingCoolingState.OFF;
+      } else {
+        this.platform.log.debug('Triggered GET TargetHeatingCoolingState HEAT');
+        return this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
       }
-
-      switch (this.masterThermAPI.getIntValue(response, 50)) {
-        case 0:
-          this.platform.log.debug('Triggered GET TargetHeatingCoolingState AUTO');
-          return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
-        case 1:
-          this.platform.log.debug('Triggered GET TargetHeatingCoolingState HEAT');
-          return this.platform.Characteristic.TargetHeatingCoolingState.HEAT;
-        case 2:
-          this.platform.log.debug('Triggered GET TargetHeatingCoolingState COOL');
-          return this.platform.Characteristic.TargetHeatingCoolingState.COOL;
-      }
-      this.platform.log.debug('Triggered GET TargetHeatingCoolingState AUTO (default)');
-      return this.platform.Characteristic.TargetHeatingCoolingState.AUTO;
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
     }
@@ -147,17 +141,8 @@ export class HeatPumpThermostatAccessory {
         case this.platform.Characteristic.TargetHeatingCoolingState.OFF:
           await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 0);
           break;
-        case this.platform.Characteristic.TargetHeatingCoolingState.AUTO:
-          await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 1);
-          await this.masterThermAPI.setData(this.accessory.context.device.id, 'I_50', 0);
-          break;
         case this.platform.Characteristic.TargetHeatingCoolingState.HEAT:
           await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 1);
-          await this.masterThermAPI.setData(this.accessory.context.device.id, 'I_50', 1);
-          break;
-        case this.platform.Characteristic.TargetHeatingCoolingState.COOL:
-          await this.masterThermAPI.setData(this.accessory.context.device.id, 'D_3', 1);
-          await this.masterThermAPI.setData(this.accessory.context.device.id, 'I_50', 2);
           break;
       }
     } catch {
