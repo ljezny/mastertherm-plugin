@@ -48,7 +48,7 @@ export class TemperatureSensorAccessory {
     setInterval(async () => {
       this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
         , await this.handleCurrentTemperatureGet());
-    }, 1 * 60 * 1000); //one minute
+    }, 3 * 60 * 1000); //three minutes
   }
 
   /**

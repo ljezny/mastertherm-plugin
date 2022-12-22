@@ -79,7 +79,7 @@ export class HotWaterThermostatAccessory {
         , await this.handleTargetTemperatureGet());
       this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
         , await this.handleCurrentTemperatureGet());
-    }, 1 * 60 * 1000); //two minute
+    }, 3 * 60 * 1000); //three minute
   }
 
   /**
