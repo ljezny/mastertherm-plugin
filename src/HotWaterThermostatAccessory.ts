@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { DataResponse, MasterThermAPI } from './masterthermAPI';
+import { MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
 
