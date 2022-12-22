@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { DataResponse, MasterThermAPI } from './masterthermAPI';
+import { MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
 
@@ -10,7 +10,6 @@ import { MasterThermHomebridgePlatform } from './platform';
  */
 export class HeatPumpThermostatAccessory {
   private service: Service;
-  private cachedData?: DataResponse;
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
@@ -66,21 +65,14 @@ export class HeatPumpThermostatAccessory {
 
 
     setInterval(async () => {
-      try {
-        await this.masterThermAPI.login();
-        this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
-
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
-          , await this.handleCurrentHeatingCoolingStateGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
-          , await this.handleTargetHeatingCoolingStateGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
-          , await this.handleTargetTemperatureGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
-          , await this.handleCurrentTemperatureGet());
-      } catch {
-        throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
-      }
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
+        , await this.handleCurrentHeatingCoolingStateGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
+        , await this.handleTargetHeatingCoolingStateGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
+        , await this.handleTargetTemperatureGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
+        , await this.handleCurrentTemperatureGet());
     }, 1 * 60 * 1000); //one minute
   }
 
@@ -91,7 +83,7 @@ export class HeatPumpThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET CurrentHeatingCoolingState');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
 
       if (!this.masterThermAPI.getBoolValue(response, 3)) {
         return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
@@ -116,7 +108,7 @@ export class HeatPumpThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET TargetHeatingCoolingState');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
 
       if (!this.masterThermAPI.getBoolValue(response, 3)) {
         this.platform.log.debug('Triggered GET TargetHeatingCoolingState OFF');
@@ -157,7 +149,7 @@ export class HeatPumpThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET CurrentTemperature');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
       return this.masterThermAPI.getAnalogValue(response, 211);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -172,7 +164,7 @@ export class HeatPumpThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET TargetTemperature');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
       return this.masterThermAPI.getAnalogValue(response, 191);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);

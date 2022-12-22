@@ -2,7 +2,7 @@ import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, 
 
 import { PLATFORM_NAME, PLUGIN_NAME } from './settings';
 import { HeatPumpThermostatAccessory } from './HeatPumpThermostatAccessory';
-import { MasterThermAPI } from './masterthermAPI';
+import { DataResponse, MasterThermAPI } from './masterthermAPI';
 import { TemperatureSensorAccessory } from './TemperatureSensorAccessory';
 import { HotWaterThermostatAccessory } from './HotWaterThermostatAccessory';
 
@@ -17,6 +17,8 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
 
   // this is used to track restored cached accessories
   public readonly accessories: PlatformAccessory[] = [];
+
+  public data!: DataResponse;
 
   constructor(
     public readonly log: Logger,
@@ -56,8 +58,27 @@ export class MasterThermHomebridgePlatform implements DynamicPlatformPlugin {
     const masterThermApi = new MasterThermAPI(this.log, this.config);
     const loginResponse = await masterThermApi.login();
     if (loginResponse.returncode === 0) {
+
+      setInterval(async () => {
+        try {
+          await masterThermApi.login();
+        } catch {
+          this.log.error('Interval login failure');
+        }
+      }, 10 * 60 * 1000); //10 minutes
+
       for (const moduleInfo of loginResponse.modules) {
-        const dataResponse = await masterThermApi.getData(moduleInfo.id.toString());
+        this.data = await masterThermApi.getData(moduleInfo.id.toString());
+        const dataResponse = this.data;
+
+        setInterval(async () => {
+          try {
+            this.data = await masterThermApi.getData(moduleInfo.id.toString());
+          } catch {
+            this.log.error('Interval getData failure');
+          }
+        }, 2 * 60 * 1000); //2 minutes
+
         {
           const uuid = this.api.hap.uuid.generate(moduleInfo.id.toString() + 'HeatPump');
           const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid);

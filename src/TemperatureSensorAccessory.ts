@@ -1,5 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge';
-import { DataResponse, MasterThermAPI } from './masterthermAPI';
+import { MasterThermAPI } from './masterthermAPI';
 
 import { MasterThermHomebridgePlatform } from './platform';
 
@@ -10,7 +10,6 @@ import { MasterThermHomebridgePlatform } from './platform';
  */
 export class TemperatureSensorAccessory {
   private service: Service;
-  private cachedData?: DataResponse;
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
@@ -47,15 +46,8 @@ export class TemperatureSensorAccessory {
 
 
     setInterval(async () => {
-      try {
-        await this.masterThermAPI.login();
-        this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
-
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
-          , await this.handleCurrentTemperatureGet());
-      } catch {
-        platform.log.error('Interval update failure');
-      }
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
+        , await this.handleCurrentTemperatureGet());
     }, 1 * 60 * 1000); //one minute
   }
 
@@ -66,7 +58,7 @@ export class TemperatureSensorAccessory {
     try {
       this.platform.log.debug('Triggered GET CurrentTemperature');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
       return this.masterThermAPI.getAnalogValue(response, this.valueId);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);

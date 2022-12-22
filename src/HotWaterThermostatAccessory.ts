@@ -10,7 +10,6 @@ import { MasterThermHomebridgePlatform } from './platform';
  */
 export class HotWaterThermostatAccessory {
   private service: Service;
-  private cachedData?: DataResponse;
   constructor(
     private readonly platform: MasterThermHomebridgePlatform,
     private readonly accessory: PlatformAccessory,
@@ -72,22 +71,15 @@ export class HotWaterThermostatAccessory {
 
 
     setInterval(async () => {
-      try {
-        await this.masterThermAPI.login();
-        this.cachedData = await this.masterThermAPI.getData(this.accessory.context.device.id);
-
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
-          , await this.handleCurrentHeatingCoolingStateGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
-          , await this.handleTargetHeatingCoolingStateGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
-          , await this.handleTargetTemperatureGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
-          , await this.handleCurrentTemperatureGet());
-      } catch {
-        platform.log.error('Interval update failure');
-      }
-    }, 1 * 60 * 1000); //one minute
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeatingCoolingState
+        , await this.handleCurrentHeatingCoolingStateGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetHeatingCoolingState
+        , await this.handleTargetHeatingCoolingStateGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.TargetTemperature
+        , await this.handleTargetTemperatureGet());
+      this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature
+        , await this.handleCurrentTemperatureGet());
+    }, 1 * 60 * 1000); //two minute
   }
 
   /**
@@ -97,7 +89,7 @@ export class HotWaterThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET CurrentHeatingCoolingState');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
 
       if (!this.masterThermAPI.getBoolValue(response, 3)) {
         return this.platform.Characteristic.CurrentHeatingCoolingState.OFF;
@@ -135,7 +127,7 @@ export class HotWaterThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET CurrentTemperature');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
       return this.masterThermAPI.getAnalogValue(response, 126);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
@@ -150,7 +142,7 @@ export class HotWaterThermostatAccessory {
     try {
       this.platform.log.debug('Triggered GET TargetTemperature');
 
-      const response = this.cachedData ?? await this.masterThermAPI.getData(this.accessory.context.device.id);
+      const response = this.platform.data;
       return this.masterThermAPI.getAnalogValue(response, 129);
     } catch {
       throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE);
